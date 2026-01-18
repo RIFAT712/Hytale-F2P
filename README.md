@@ -67,7 +67,7 @@ See [BUILD.md](BUILD.md) for detailed build instructions.
 1. Download the server files directly from: `http://3.10.208.30:3002/server`
 2. Replace the existing files in your `HytaleF2P` installation folder
 3. Run the server launcher (.bat) to start hosting your own Hytale server
-4. You will need a third party software like Hamachi.
+4. You will need a third party software like Hamachi (check on youtube how to use hamachi).
    
 ### 🎮 Usage
 
