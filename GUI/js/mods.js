@@ -522,7 +522,6 @@ function showNotification(message, type = 'info', duration = 4000) {
   }, duration);
 }
 
-// Custom confirmation modal
 function showConfirmModal(message, onConfirm, onCancel = null) {
   const existingModal = document.querySelector('.mod-confirm-modal');
   if (existingModal) {

@@ -2,6 +2,36 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
+
+// Default auth domain - can be overridden by env var or config
+const DEFAULT_AUTH_DOMAIN = 'sanasol.ws';
+
+// Get auth domain from env, config, or default
+function getAuthDomain() {
+  // First check environment variable
+  if (process.env.HYTALE_AUTH_DOMAIN) {
+    return process.env.HYTALE_AUTH_DOMAIN;
+  }
+  // Then check config file
+  const config = loadConfig();
+  if (config.authDomain) {
+    return config.authDomain;
+  }
+  // Fall back to default
+  return DEFAULT_AUTH_DOMAIN;
+}
+
+// Get full auth server URL
+function getAuthServerUrl() {
+  const domain = getAuthDomain();
+  return `https://sessions.${domain}`;
+}
+
+// Save auth domain to config
+function saveAuthDomain(domain) {
+  saveConfig({ authDomain: domain || DEFAULT_AUTH_DOMAIN });
+}
+
 function getAppDir() {
   const home = os.homedir();
   if (process.platform === 'win32') {
@@ -94,6 +124,15 @@ function loadInstallPath() {
   return config.installPath || '';
 }
 
+function saveDiscordRPC(enabled) {
+  saveConfig({ discordRPC: !!enabled });
+}
+
+function loadDiscordRPC() {
+  const config = loadConfig();
+  return config.discordRPC !== undefined ? config.discordRPC : true;
+}
+
 function saveModsToConfig(mods) {
   try {
     let config = loadConfig();
@@ -143,6 +182,70 @@ function markAsLaunched() {
   saveConfig({ hasLaunchedBefore: true, firstLaunchDate: new Date().toISOString() });
 }
 
+// UUID Management Functions
+function getCurrentUuid() {
+  const username = loadUsername();
+  return getUuidForUser(username);
+}
+
+function getAllUuidMappings() {
+  const config = loadConfig();
+  return config.userUuids || {};
+}
+
+function setUuidForUser(username, uuid) {
+  const { v4: uuidv4, validate: validateUuid } = require('uuid');
+  
+  // Validate UUID format
+  if (!validateUuid(uuid)) {
+    throw new Error('Invalid UUID format');
+  }
+  
+  const config = loadConfig();
+  const userUuids = config.userUuids || {};
+  userUuids[username] = uuid;
+  saveConfig({ userUuids });
+  
+  return uuid;
+}
+
+function generateNewUuid() {
+  const { v4: uuidv4 } = require('uuid');
+  return uuidv4();
+}
+
+function deleteUuidForUser(username) {
+  const config = loadConfig();
+  const userUuids = config.userUuids || {};
+  
+  if (userUuids[username]) {
+    delete userUuids[username];
+    saveConfig({ userUuids });
+    return true;
+  }
+  
+  return false;
+}
+
+function resetCurrentUserUuid() {
+  const username = loadUsername();
+  const { v4: uuidv4 } = require('uuid');
+  const newUuid = uuidv4();
+  
+  return setUuidForUser(username, newUuid);
+}
+
+function saveChatColor(color) {
+  const config = loadConfig();
+  config.chatColor = color;
+  saveConfig(config);
+}
+
+function loadChatColor() {
+  const config = loadConfig();
+  return config.chatColor || '#3498db';
+}
+
 module.exports = {
   loadConfig,
   saveConfig,
@@ -150,14 +253,29 @@ module.exports = {
   loadUsername,
   saveChatUsername,
   loadChatUsername,
+  saveChatColor,
+  loadChatColor,
   getUuidForUser,
   saveJavaPath,
   loadJavaPath,
   saveInstallPath,
   loadInstallPath,
+  saveDiscordRPC,
+  loadDiscordRPC,
   saveModsToConfig,
   loadModsFromConfig,
   isFirstLaunch,
   markAsLaunched,
-  CONFIG_FILE
+  CONFIG_FILE,
+  // Auth server exports
+  getAuthServerUrl,
+  getAuthDomain,
+  saveAuthDomain,
+  // UUID Management exports
+  getCurrentUuid,
+  getAllUuidMappings,
+  setUuidForUser,
+  generateNewUuid,
+  deleteUuidForUser,
+  resetCurrentUserUuid
 };

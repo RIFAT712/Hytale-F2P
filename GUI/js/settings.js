@@ -4,6 +4,143 @@ let customJavaOptions;
 let customJavaPath;
 let browseJavaBtn;
 let settingsPlayerName;
+let discordRPCCheck;
+
+// UUID Management elements
+let currentUuidDisplay;
+let copyUuidBtn;
+let regenerateUuidBtn;
+let manageUuidsBtn;
+let uuidModal;
+let uuidModalClose;
+let modalCurrentUuid;
+let modalCopyUuidBtn;
+let modalRegenerateUuidBtn;
+let generateNewUuidBtn;
+let uuidList;
+let customUuidInput;
+let setCustomUuidBtn;
+
+function showCustomConfirm(message, title = 'Confirm Action', onConfirm, onCancel = null, confirmText = 'Confirm', cancelText = 'Cancel') {
+  const existingModal = document.querySelector('.custom-confirm-modal');
+  if (existingModal) {
+    existingModal.remove();
+  }
+
+  const modal = document.createElement('div');
+  modal.className = 'custom-confirm-modal';
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+    z-index: 20000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  `;
+
+  const dialog = document.createElement('div');
+  dialog.className = 'custom-confirm-dialog';
+  dialog.style.cssText = `
+    background: #1f2937;
+    border-radius: 12px;
+    padding: 0;
+    min-width: 400px;
+    max-width: 500px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(147, 51, 234, 0.3);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+  `;
+
+  dialog.innerHTML = `
+    <div style="padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+      <div style="display: flex; align-items: center; gap: 12px; color: #9333ea;">
+        <i class="fas fa-exclamation-triangle" style="font-size: 24px;"></i>
+        <h3 style="margin: 0; font-size: 1.2rem; font-weight: 600;">${title}</h3>
+      </div>
+    </div>
+    <div style="padding: 24px; color: #e5e7eb;">
+      <p style="margin: 0; line-height: 1.5; font-size: 1rem;">${message}</p>
+    </div>
+    <div style="padding: 20px 24px; display: flex; gap: 12px; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.1);">
+      <button class="custom-confirm-cancel" style="
+        background: transparent;
+        color: #9ca3af;
+        border: 1px solid rgba(156, 163, 175, 0.3);
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s;
+      ">${cancelText}</button>
+      <button class="custom-confirm-action" style="
+        background: linear-gradient(135deg, #9333ea, #3b82f6);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s;
+      ">${confirmText}</button>
+    </div>
+  `;
+
+  modal.appendChild(dialog);
+  document.body.appendChild(modal);
+
+  // Animate in
+  setTimeout(() => {
+    modal.style.opacity = '1';
+    dialog.style.transform = 'scale(1)';
+  }, 10);
+
+  // Event handlers
+  const cancelBtn = dialog.querySelector('.custom-confirm-cancel');
+  const actionBtn = dialog.querySelector('.custom-confirm-action');
+
+  const closeModal = () => {
+    modal.style.opacity = '0';
+    dialog.style.transform = 'scale(0.9)';
+    setTimeout(() => {
+      modal.remove();
+    }, 300);
+  };
+
+  cancelBtn.onclick = () => {
+    closeModal();
+    if (onCancel) onCancel();
+  };
+
+  actionBtn.onclick = () => {
+    closeModal();
+    onConfirm();
+  };
+
+  modal.onclick = (e) => {
+    if (e.target === modal) {
+      closeModal();
+      if (onCancel) onCancel();
+    }
+  };
+
+  // Escape key
+  const handleEscape = (e) => {
+    if (e.key === 'Escape') {
+      closeModal();
+      if (onCancel) onCancel();
+      document.removeEventListener('keydown', handleEscape);
+    }
+  };
+  document.addEventListener('keydown', handleEscape);
+}
 
 export function initSettings() {
   setupSettingsElements();
@@ -16,6 +153,22 @@ function setupSettingsElements() {
   customJavaPath = document.getElementById('customJavaPath');
   browseJavaBtn = document.getElementById('browseJavaBtn');
   settingsPlayerName = document.getElementById('settingsPlayerName');
+  discordRPCCheck = document.getElementById('discordRPCCheck');
+
+  // UUID Management elements
+  currentUuidDisplay = document.getElementById('currentUuid');
+  copyUuidBtn = document.getElementById('copyUuidBtn');
+  regenerateUuidBtn = document.getElementById('regenerateUuidBtn');
+  manageUuidsBtn = document.getElementById('manageUuidsBtn');
+  uuidModal = document.getElementById('uuidModal');
+  uuidModalClose = document.getElementById('uuidModalClose');
+  modalCurrentUuid = document.getElementById('modalCurrentUuid');
+  modalCopyUuidBtn = document.getElementById('modalCopyUuidBtn');
+  modalRegenerateUuidBtn = document.getElementById('modalRegenerateUuidBtn');
+  generateNewUuidBtn = document.getElementById('generateNewUuidBtn');
+  uuidList = document.getElementById('uuidList');
+  customUuidInput = document.getElementById('customUuidInput');
+  setCustomUuidBtn = document.getElementById('setCustomUuidBtn');
 
   if (customJavaCheck) {
     customJavaCheck.addEventListener('change', toggleCustomJava);
@@ -27,6 +180,51 @@ function setupSettingsElements() {
 
   if (settingsPlayerName) {
     settingsPlayerName.addEventListener('change', savePlayerName);
+  }
+
+  if (discordRPCCheck) {
+    discordRPCCheck.addEventListener('change', saveDiscordRPC);
+  }
+
+  // UUID event listeners
+  if (copyUuidBtn) {
+    copyUuidBtn.addEventListener('click', copyCurrentUuid);
+  }
+
+  if (regenerateUuidBtn) {
+    regenerateUuidBtn.addEventListener('click', regenerateCurrentUuid);
+  }
+
+  if (manageUuidsBtn) {
+    manageUuidsBtn.addEventListener('click', openUuidModal);
+  }
+
+  if (uuidModalClose) {
+    uuidModalClose.addEventListener('click', closeUuidModal);
+  }
+
+  if (modalCopyUuidBtn) {
+    modalCopyUuidBtn.addEventListener('click', copyCurrentUuid);
+  }
+
+  if (modalRegenerateUuidBtn) {
+    modalRegenerateUuidBtn.addEventListener('click', regenerateCurrentUuid);
+  }
+
+  if (generateNewUuidBtn) {
+    generateNewUuidBtn.addEventListener('click', generateNewUuid);
+  }
+
+  if (setCustomUuidBtn) {
+    setCustomUuidBtn.addEventListener('click', setCustomUuid);
+  }
+
+  if (uuidModal) {
+    uuidModal.addEventListener('click', (e) => {
+      if (e.target === uuidModal) {
+        closeUuidModal();
+      }
+    });
   }
 }
 
@@ -90,24 +288,73 @@ async function loadCustomJavaPath() {
   }
 }
 
-async function savePlayerName() {
+async function saveDiscordRPC() {
   try {
-    if (window.electronAPI && window.electronAPI.saveUsername && settingsPlayerName) {
-      const playerName = settingsPlayerName.value.trim() || 'Player';
-      await window.electronAPI.saveUsername(playerName);
+    if (window.electronAPI && window.electronAPI.saveDiscordRPC && discordRPCCheck) {
+      const enabled = discordRPCCheck.checked;
+      console.log('Saving Discord RPC setting:', enabled);
+      
+      const result = await window.electronAPI.saveDiscordRPC(enabled);
+      
+      if (result && result.success) {
+        console.log('Discord RPC setting saved successfully:', enabled);
+        
+        // Feedback visuel pour l'utilisateur
+        if (enabled) {
+          showNotification('Discord Rich Presence enabled', 'success');
+        } else {
+          showNotification('Discord Rich Presence disabled', 'success');
+        }
+      } else {
+        throw new Error('Failed to save Discord RPC setting');
+      }
     }
   } catch (error) {
+    console.error('Error saving Discord RPC setting:', error);
+    showNotification('Failed to save Discord setting', 'error');
+  }
+}
+
+async function loadDiscordRPC() {
+  try {
+    if (window.electronAPI && window.electronAPI.loadDiscordRPC) {
+      const enabled = await window.electronAPI.loadDiscordRPC();
+      if (discordRPCCheck) {
+        discordRPCCheck.checked = enabled;
+      }
+    }
+  } catch (error) {
+    console.error('Error loading Discord RPC setting:', error);
+  }
+}
+
+async function savePlayerName() {
+  try {
+    if (!window.electronAPI || !settingsPlayerName) return;
+    
+    const playerName = settingsPlayerName.value.trim();
+    
+    if (!playerName) {
+      showNotification('Please enter a valid player name', 'error');
+      return;
+    }
+
+    await window.electronAPI.saveUsername(playerName);
+    showNotification('Player name saved successfully', 'success');
+    
+  } catch (error) {
     console.error('Error saving player name:', error);
+    showNotification('Failed to save player name', 'error');
   }
 }
 
 async function loadPlayerName() {
   try {
-    if (window.electronAPI && window.electronAPI.loadUsername && settingsPlayerName) {
-      const savedName = await window.electronAPI.loadUsername();
-      if (savedName) {
-        settingsPlayerName.value = savedName;
-      }
+    if (!window.electronAPI || !settingsPlayerName) return;
+    
+    const savedName = await window.electronAPI.loadUsername();
+    if (savedName) {
+      settingsPlayerName.value = savedName;
     }
   } catch (error) {
     console.error('Error loading player name:', error);
@@ -117,6 +364,8 @@ async function loadPlayerName() {
 async function loadAllSettings() {
   await loadCustomJavaPath();
   await loadPlayerName();
+  await loadCurrentUuid();
+  await loadDiscordRPC();
 }
 
 async function openGameLocation() {
@@ -144,7 +393,6 @@ export function getCurrentPlayerName() {
   return 'Player';
 }
 
-// Make openGameLocation globally available
 window.openGameLocation = openGameLocation;
 
 document.addEventListener('DOMContentLoaded', initSettings);
@@ -153,3 +401,328 @@ window.SettingsAPI = {
   getCurrentJavaPath,
   getCurrentPlayerName
 };
+
+async function loadCurrentUuid() {
+  try {
+    if (window.electronAPI && window.electronAPI.getCurrentUuid) {
+      const uuid = await window.electronAPI.getCurrentUuid();
+      if (uuid) {
+        if (currentUuidDisplay) currentUuidDisplay.value = uuid;
+        if (modalCurrentUuid) modalCurrentUuid.value = uuid;
+      }
+    }
+  } catch (error) {
+    console.error('Error loading current UUID:', error);
+  }
+}
+
+async function copyCurrentUuid() {
+  try {
+    const uuid = currentUuidDisplay ? currentUuidDisplay.value : modalCurrentUuid?.value;
+    if (uuid && navigator.clipboard) {
+      await navigator.clipboard.writeText(uuid);
+      showNotification('UUID copied to clipboard!', 'success');
+    }
+  } catch (error) {
+    console.error('Error copying UUID:', error);
+    showNotification('Failed to copy UUID', 'error');
+  }
+}
+
+async function regenerateCurrentUuid() {
+  try {
+    if (window.electronAPI && window.electronAPI.resetCurrentUserUuid) {
+      showCustomConfirm(
+        'Are you sure you want to generate a new UUID? This will change your player identity.',
+        'Generate New UUID',
+        async () => {
+          await performRegenerateUuid();
+        },
+        null,
+        'Generate',
+        'Cancel'
+      );
+    } else {
+      console.error('electronAPI.resetCurrentUserUuid not available');
+      showNotification('UUID regeneration not available', 'error');
+    }
+  } catch (error) {
+    console.error('Error in regenerateCurrentUuid:', error);
+    showNotification('Failed to regenerate UUID', 'error');
+  }
+}
+
+async function performRegenerateUuid() {
+  try {
+    const result = await window.electronAPI.resetCurrentUserUuid();
+    if (result.success && result.uuid) {
+      if (currentUuidDisplay) currentUuidDisplay.value = result.uuid;
+      if (modalCurrentUuid) modalCurrentUuid.value = result.uuid;
+      showNotification('New UUID generated successfully!', 'success');
+      
+      if (uuidModal && uuidModal.style.display !== 'none') {
+        await loadAllUuids();
+      }
+    } else {
+      throw new Error(result.error || 'Failed to generate new UUID');
+    }
+  } catch (error) {
+    console.error('Error regenerating UUID:', error);
+    showNotification(`Failed to regenerate UUID: ${error.message}`, 'error');
+  }
+}
+
+async function openUuidModal() {
+  try {
+    if (uuidModal) {
+      uuidModal.style.display = 'flex';
+      uuidModal.classList.add('active');
+      await loadAllUuids();
+    }
+  } catch (error) {
+    console.error('Error opening UUID modal:', error);
+  }
+}
+
+function closeUuidModal() {
+  if (uuidModal) {
+    uuidModal.classList.remove('active');
+    setTimeout(() => {
+      uuidModal.style.display = 'none';
+    }, 300);
+  }
+}
+
+async function loadAllUuids() {
+  try {
+    if (!uuidList) return;
+    
+    uuidList.innerHTML = `
+      <div class="uuid-loading">
+        <i class="fas fa-spinner fa-spin"></i>
+        Loading UUIDs...
+      </div>
+    `;
+
+    if (window.electronAPI && window.electronAPI.getAllUuidMappings) {
+      const mappings = await window.electronAPI.getAllUuidMappings();
+      
+      if (mappings.length === 0) {
+        uuidList.innerHTML = `
+          <div class="uuid-loading">
+            <i class="fas fa-info-circle"></i>
+            No UUIDs found
+          </div>
+        `;
+        return;
+      }
+
+      uuidList.innerHTML = '';
+      
+      for (const mapping of mappings) {
+        const item = document.createElement('div');
+        item.className = `uuid-list-item${mapping.isCurrent ? ' current' : ''}`;
+        
+        item.innerHTML = `
+          <div class="uuid-item-info">
+            <div class="uuid-item-username">${escapeHtml(mapping.username)}</div>
+            <div class="uuid-item-uuid">${mapping.uuid}</div>
+          </div>
+          <div class="uuid-item-actions">
+            ${mapping.isCurrent ? '<div class="uuid-item-current-badge">Current</div>' : ''}
+            <button class="uuid-item-btn copy" onclick="copyUuid('${mapping.uuid}')" title="Copy UUID">
+              <i class="fas fa-copy"></i>
+            </button>
+            ${!mapping.isCurrent ? `<button class="uuid-item-btn delete" onclick="deleteUuid('${escapeHtml(mapping.username)}')" title="Delete UUID">
+              <i class="fas fa-trash"></i>
+            </button>` : ''}
+          </div>
+        `;
+        
+        uuidList.appendChild(item);
+      }
+    }
+  } catch (error) {
+    console.error('Error loading UUIDs:', error);
+    if (uuidList) {
+      uuidList.innerHTML = `
+        <div class="uuid-loading">
+          <i class="fas fa-exclamation-triangle"></i>
+          Error loading UUIDs
+        </div>
+      `;
+    }
+  }
+}
+
+async function generateNewUuid() {
+  try {
+    if (window.electronAPI && window.electronAPI.generateNewUuid) {
+      const newUuid = await window.electronAPI.generateNewUuid();
+      if (newUuid) {
+        if (customUuidInput) customUuidInput.value = newUuid;
+        showNotification('New UUID generated!', 'success');
+      }
+    }
+  } catch (error) {
+    console.error('Error generating new UUID:', error);
+    showNotification('Failed to generate new UUID', 'error');
+  }
+}
+
+async function setCustomUuid() {
+  try {
+    if (!customUuidInput || !customUuidInput.value.trim()) {
+      showNotification('Please enter a UUID', 'error');
+      return;
+    }
+
+    const uuid = customUuidInput.value.trim();
+    
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(uuid)) {
+      showNotification('Invalid UUID format', 'error');
+      return;
+    }
+
+    showCustomConfirm(
+      'Are you sure you want to set this custom UUID? This will change your player identity.',
+      'Set Custom UUID',
+      async () => {
+        await performSetCustomUuid(uuid);
+      },
+      null,
+      'Set UUID',
+      'Cancel'
+    );
+  } catch (error) {
+    console.error('Error in setCustomUuid:', error);
+    showNotification('Failed to set custom UUID', 'error');
+  }
+}
+
+  async function performSetCustomUuid(uuid) {
+    try {
+      if (window.electronAPI && window.electronAPI.setUuidForUser) {
+        const username = getCurrentPlayerName();
+        const result = await window.electronAPI.setUuidForUser(username, uuid);
+        
+        if (result.success) {
+          if (currentUuidDisplay) currentUuidDisplay.value = uuid;
+          if (modalCurrentUuid) modalCurrentUuid.value = uuid;
+          if (customUuidInput) customUuidInput.value = '';
+          
+          showNotification('Custom UUID set successfully!', 'success');
+          
+          await loadAllUuids();
+        } else {
+          throw new Error(result.error || 'Failed to set custom UUID');
+        }
+      }
+    } catch (error) {
+      console.error('Error setting custom UUID:', error);
+      showNotification(`Failed to set custom UUID: ${error.message}`, 'error');
+    }
+  }
+
+window.copyUuid = async function(uuid) {
+  try {
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(uuid);
+      showNotification('UUID copied to clipboard!', 'success');
+    }
+  } catch (error) {
+    console.error('Error copying UUID:', error);
+    showNotification('Failed to copy UUID', 'error');
+  }
+};
+
+window.deleteUuid = async function(username) {
+  try {
+    showCustomConfirm(
+      `Are you sure you want to delete the UUID for "${username}"? This action cannot be undone.`,
+      'Delete UUID',
+      async () => {
+        await performDeleteUuid(username);
+      },
+      null,
+      'Delete',
+      'Cancel'
+    );
+  } catch (error) {
+    console.error('Error in deleteUuid:', error);
+    showNotification('Failed to delete UUID', 'error');
+  }
+};
+
+async function performDeleteUuid(username) {
+  try {
+    if (window.electronAPI && window.electronAPI.deleteUuidForUser) {
+        const result = await window.electronAPI.deleteUuidForUser(username);
+        
+        if (result.success) {
+          showNotification('UUID deleted successfully!', 'success');
+          await loadAllUuids();
+        } else {
+          throw new Error(result.error || 'Failed to delete UUID');
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting UUID:', error);
+      showNotification(`Failed to delete UUID: ${error.message}`, 'error');
+    }
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function showNotification(message, type = 'info') {
+  const notification = document.createElement('div');
+  notification.className = `notification notification-${type}`;
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    z-index: 10000;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.3s ease;
+  `;
+
+  if (type === 'success') {
+    notification.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
+  } else if (type === 'error') {
+    notification.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+  } else {
+    notification.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)';
+  }
+
+  notification.innerHTML = `
+    <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i>
+    ${message}
+  `;
+
+  document.body.appendChild(notification);
+
+  setTimeout(() => {
+    notification.style.opacity = '1';
+    notification.style.transform = 'translateX(0)';
+  }, 100);
+
+  setTimeout(() => {
+    notification.style.opacity = '0';
+    notification.style.transform = 'translateX(100%)';
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 300);
+  }, 3000);
+}

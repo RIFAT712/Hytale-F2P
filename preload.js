@@ -9,10 +9,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loadUsername: () => ipcRenderer.invoke('load-username'),
   saveChatUsername: (chatUsername) => ipcRenderer.invoke('save-chat-username', chatUsername),
   loadChatUsername: () => ipcRenderer.invoke('load-chat-username'),
+  saveChatColor: (chatColor) => ipcRenderer.invoke('save-chat-color', chatColor),
+  loadChatColor: () => ipcRenderer.invoke('load-chat-color'),
   saveJavaPath: (javaPath) => ipcRenderer.invoke('save-java-path', javaPath),
   loadJavaPath: () => ipcRenderer.invoke('load-java-path'),
   saveInstallPath: (installPath) => ipcRenderer.invoke('save-install-path', installPath),
   loadInstallPath: () => ipcRenderer.invoke('load-install-path'),
+  saveDiscordRPC: (enabled) => ipcRenderer.invoke('save-discord-rpc', enabled),
+  loadDiscordRPC: () => ipcRenderer.invoke('load-discord-rpc'),
   selectInstallPath: () => ipcRenderer.invoke('select-install-path'),
   browseJavaPath: () => ipcRenderer.invoke('browse-java-path'),
   isGameInstalled: () => ipcRenderer.invoke('is-game-installed'),
@@ -61,5 +65,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   getLogDirectory: () => ipcRenderer.invoke('get-log-directory'),
-  getRecentLogs: (maxLines) => ipcRenderer.invoke('get-recent-logs', maxLines)
+  getRecentLogs: (maxLines) => ipcRenderer.invoke('get-recent-logs', maxLines),
+  
+  // UUID Management methods
+  getCurrentUuid: () => ipcRenderer.invoke('get-current-uuid'),
+  getAllUuidMappings: () => ipcRenderer.invoke('get-all-uuid-mappings'),
+  setUuidForUser: (username, uuid) => ipcRenderer.invoke('set-uuid-for-user', username, uuid),
+  generateNewUuid: () => ipcRenderer.invoke('generate-new-uuid'),
+  deleteUuidForUser: (username) => ipcRenderer.invoke('delete-uuid-for-user', username),
+  resetCurrentUserUuid: () => ipcRenderer.invoke('reset-current-user-uuid')
 });

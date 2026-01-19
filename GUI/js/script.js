@@ -7,7 +7,6 @@ import './players.js';
 import './chat.js';
 import './settings.js';
 
-// Discord notification functions
 window.closeDiscordNotification = function() {
   const notification = document.getElementById('discordNotification');
   if (notification) {
@@ -18,23 +17,20 @@ window.closeDiscordNotification = function() {
   }
 };
 
-// Show notification after a delay
 document.addEventListener('DOMContentLoaded', () => {
   const notification = document.getElementById('discordNotification');
   if (notification) {
-    // Check if user has previously dismissed the notification
     const dismissed = localStorage.getItem('discordNotificationDismissed');
     if (!dismissed) {
       setTimeout(() => {
         notification.style.display = 'flex';
-      }, 3000); // Show after 3 seconds
+      }, 3000); 
     } else {
       notification.style.display = 'none';
     }
   }
 });
 
-// Remember when user closes notification
 const originalClose = window.closeDiscordNotification;
 window.closeDiscordNotification = function() {
   localStorage.setItem('discordNotificationDismissed', 'true');

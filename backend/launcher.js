@@ -7,16 +7,27 @@ const {
   loadUsername,
   saveChatUsername,
   loadChatUsername,
+  saveChatColor,
+  loadChatColor,
   saveJavaPath,
   loadJavaPath,
   saveInstallPath,
   loadInstallPath,
+  saveDiscordRPC,
+  loadDiscordRPC,
   saveModsToConfig,
   loadModsFromConfig,
   getUuidForUser,
   isFirstLaunch,
   markAsLaunched,
-  CONFIG_FILE
+  CONFIG_FILE,
+  // UUID Management
+  getCurrentUuid,
+  getAllUuidMappings,
+  setUuidForUser,
+  generateNewUuid,
+  deleteUuidForUser,
+  resetCurrentUserUuid
 } = require('./core/config');
 
 const { getResolvedAppDir, getModsPath } = require('./core/paths');
@@ -36,8 +47,6 @@ const {
 } = require('./managers/gameLauncher');
 
 const { getJavaDetection } = require('./managers/javaManager');
-
-const { checkAndInstallMultiClient } = require('./managers/multiClientManager');
 
 const {
   downloadAndReplaceHomePageUI,
@@ -85,6 +94,8 @@ module.exports = {
   loadUsername,
   saveChatUsername,
   loadChatUsername,
+  saveChatColor,
+  loadChatColor,
   getUuidForUser,
   
   // Java configuration functions
@@ -96,6 +107,10 @@ module.exports = {
   saveInstallPath,
   loadInstallPath,
   
+  // Discord RPC functions
+  saveDiscordRPC,
+  loadDiscordRPC,
+  
   // Version functions
   getInstalledClientVersion,
   getLatestClientVersion,
@@ -106,8 +121,13 @@ module.exports = {
   // Player ID functions
   getOrCreatePlayerId,
   
-  // Multi-client functions
-  checkAndInstallMultiClient,
+  // UUID Management functions
+  getCurrentUuid,
+  getAllUuidMappings,
+  setUuidForUser,
+  generateNewUuid,
+  deleteUuidForUser,
+  resetCurrentUserUuid,
   
   // Mod management functions
   getModsPath,

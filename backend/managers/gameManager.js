@@ -6,7 +6,6 @@ const { getOS, getArch } = require('../utils/platformUtils');
 const { downloadFile } = require('../utils/fileManager');
 const { getLatestClientVersion, getInstalledClientVersion } = require('../services/versionManager');
 const { installButler } = require('./butlerManager');
-const { checkAndInstallMultiClient } = require('./multiClientManager');
 const { downloadAndReplaceHomePageUI, downloadAndReplaceLogo } = require('./uiFileManager');
 const { saveUsername, saveInstallPath, loadJavaPath, CONFIG_FILE, loadConfig } = require('../core/config');
 const { resolveJavaPath, detectSystemJava, downloadJRE, getJavaExec, getBundledJavaPath } = require('./javaManager');
@@ -165,9 +164,6 @@ async function updateGameFiles(newVersion, progressCallback, gameDir = GAME_DIR,
     
     fs.renameSync(tempUpdateDir, gameDir);
     
-    const multiResult = await checkAndInstallMultiClient(gameDir, progressCallback);
-    console.log('Multiplayer-client check result after update:', multiResult);
-    
     const homeUIResult = await downloadAndReplaceHomePageUI(gameDir, progressCallback);
     console.log('HomePage.ui update result after update:', homeUIResult);
     
@@ -318,9 +314,6 @@ async function installGame(playerName = 'Player', progressCallback, javaPathOver
   const pwrFile = await downloadPWR('release', latestVersion, progressCallback, customCacheDir);
   await applyPWR(pwrFile, progressCallback, customGameDir, customToolsDir);
   
-  const multiResult = await checkAndInstallMultiClient(customGameDir, progressCallback);
-  console.log('Multiplayer check result:', multiResult);
-  
   const homeUIResult = await downloadAndReplaceHomePageUI(customGameDir, progressCallback);
   console.log('HomePage.ui update result after installation:', homeUIResult);
   
@@ -334,8 +327,7 @@ async function installGame(playerName = 'Player', progressCallback, javaPathOver
   
   return { 
     success: true, 
-    installed: true, 
-    multiClient: multiResult 
+    installed: true
   };
 }
 

@@ -1,7 +1,7 @@
 const axios = require('axios');
 
-const UPDATE_CHECK_URL = 'http://3.10.208.30:3002/api/version_launcher';
-const CURRENT_VERSION = '2.0.1';
+const UPDATE_CHECK_URL = 'https://files.hytalef2p.com/api/version_launcher';
+const CURRENT_VERSION = '2.0.2';
 const GITHUB_DOWNLOAD_URL = 'https://github.com/amiayweb/Hytale-F2P/';
 
 class UpdateManager {

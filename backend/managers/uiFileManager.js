@@ -10,7 +10,7 @@ async function downloadAndReplaceHomePageUI(gameDir, progressCallback) {
       progressCallback('Downloading HomePage.ui...', null, null, null, null);
     }
 
-    const homeUIUrl = 'http://3.10.208.30:3002/api/HomeUI';
+    const homeUIUrl = 'https://files.hytalef2p.com/api/HomeUI';
     const tempHomePath = path.join(path.dirname(gameDir), 'HomePage_temp.ui');
 
     await downloadFile(homeUIUrl, tempHomePath);
@@ -63,7 +63,7 @@ async function downloadAndReplaceLogo(gameDir, progressCallback) {
       progressCallback('Downloading Logo@2x.png...', null, null, null, null);
     }
 
-    const logoUrl = 'http://3.10.208.30:3002/api/Logo';
+    const logoUrl = 'https://files.hytalef2p.com/api/Logo';
     const tempLogoPath = path.join(path.dirname(gameDir), 'Logo@2x_temp.png');
 
     await downloadFile(logoUrl, tempLogoPath);

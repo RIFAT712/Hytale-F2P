@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { launchGame, launchGameWithVersionCheck, installGame, saveUsername, loadUsername, saveChatUsername, loadChatUsername, saveJavaPath, loadJavaPath, saveInstallPath, loadInstallPath, isGameInstalled, uninstallGame, getHytaleNews, handleFirstLaunchCheck, proposeGameUpdate, markAsLaunched } = require('./backend/launcher');
+const { launchGame, launchGameWithVersionCheck, installGame, saveUsername, loadUsername, saveChatUsername, loadChatUsername, saveChatColor, loadChatColor, saveJavaPath, loadJavaPath, saveInstallPath, loadInstallPath, saveDiscordRPC, loadDiscordRPC, isGameInstalled, uninstallGame, getHytaleNews, handleFirstLaunchCheck, proposeGameUpdate, markAsLaunched } = require('./backend/launcher');
 const UpdateManager = require('./backend/updateManager');
 const logger = require('./backend/logger');
 
@@ -16,6 +16,13 @@ const DISCORD_CLIENT_ID = '1462244937868513373';
 
 function initDiscordRPC() {
   try {
+    // Check if Discord RPC is enabled in settings
+    const rpcEnabled = loadDiscordRPC();
+    if (!rpcEnabled) {
+      console.log('Discord RPC disabled in settings');
+      return;
+    }
+
     const { Client } = require('discord-rpc');
     discordRPC = new Client({ transport: 'ipc' });
     
@@ -57,6 +64,26 @@ function setDiscordActivity() {
   }
 }
 
+function toggleDiscordRPC(enabled) {
+  console.log('Toggling Discord RPC:', enabled);
+  
+  if (enabled && !discordRPC) {
+    console.log('Initializing Discord RPC...');
+    initDiscordRPC();
+  } else if (!enabled && discordRPC) {
+    try {
+      console.log('Disconnecting Discord RPC...');
+      discordRPC.clearActivity();
+      discordRPC.destroy();
+      discordRPC = null;
+      console.log('Discord RPC disconnected successfully');
+    } catch (error) {
+      console.error('Error disconnecting Discord RPC:', error.message);
+      discordRPC = null; // Force null même en cas d'erreur
+    }
+  }
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -69,12 +96,18 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      devTools: true,
+      devTools: false,
       webSecurity: true
     }
   });
 
   mainWindow.loadFile('GUI/index.html');
+
+  // Cleanup Discord RPC when window is closed
+  mainWindow.on('closed', () => {
+    console.log('Main window closed, cleaning up Discord RPC...');
+    cleanupDiscordRPC();
+  });
 
   // Initialize Discord Rich Presence
   initDiscordRPC();
@@ -86,6 +119,7 @@ function createWindow() {
       mainWindow.webContents.send('show-update-popup', updateInfo);
     }
   }, 3000);
+   //mainWindow.webContents.openDevTools();
 
 
    mainWindow.webContents.on('devtools-opened', () => {
@@ -207,17 +241,35 @@ app.whenReady().then(async () => {
   }, 3000);
 });
 
+function cleanupDiscordRPC() {
+  if (discordRPC) {
+    try {
+      console.log('Cleaning up Discord RPC...');
+      discordRPC.clearActivity();
+      setTimeout(() => {
+        try {
+          discordRPC.destroy();
+        } catch (error) {
+          console.log('Error during final Discord RPC cleanup:', error.message);
+        }
+      }, 100);
+      discordRPC = null;
+    } catch (error) {
+      console.log('Error cleaning up Discord RPC:', error.message);
+      discordRPC = null;
+    }
+  }
+}
+
+app.on('before-quit', () => {
+  console.log('=== LAUNCHER BEFORE QUIT ===');
+  cleanupDiscordRPC();
+});
+
 app.on('window-all-closed', () => {
   console.log('=== LAUNCHER CLOSING ===');
   
-  // Clean up Discord RPC connection
-  if (discordRPC) {
-    try {
-      discordRPC.destroy();
-    } catch (error) {
-      console.log('Error cleaning up Discord RPC:', error.message);
-    }
-  }
+  cleanupDiscordRPC();
   
   if (process.platform !== 'darwin') {
     app.quit();
@@ -241,16 +293,17 @@ ipcMain.handle('launch-game', async (event, playerName, javaPath, installPath) =
 
     const result = await launchGameWithVersionCheck(playerName, progressCallback, javaPath, installPath);
     
+    return result;
+  } catch (error) {
+    console.error('Launch error:', error);
+    const errorMessage = error.message || error.toString();
+    
     if (mainWindow && !mainWindow.isDestroyed()) {
       setTimeout(() => {
         mainWindow.webContents.send('progress-complete');
       }, 2000);
     }
     
-    return result;
-  } catch (error) {
-    console.error('Launch error:', error);
-    const errorMessage = error.message || error.toString();
     return { success: false, error: errorMessage };
   }
 });
@@ -272,16 +325,11 @@ ipcMain.handle('install-game', async (event, playerName, javaPath, installPath) 
 
     const result = await installGame(playerName, progressCallback, javaPath, installPath);
     
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      setTimeout(() => {
-        mainWindow.webContents.send('progress-complete');
-      }, 1000);
-    }
-    
     return result;
   } catch (error) {
     console.error('Install error:', error);
     const errorMessage = error.message || error.toString();
+    
     return { success: false, error: errorMessage };
   }
 });
@@ -301,6 +349,16 @@ ipcMain.handle('save-chat-username', async (event, chatUsername) => {
 ipcMain.handle('load-chat-username', async () => {
   return loadChatUsername();
 });
+
+ipcMain.handle('save-chat-color', (event, color) => {
+  saveChatColor(color);
+  return { success: true };
+});
+
+ipcMain.handle('load-chat-color', () => {
+  return loadChatColor();
+});
+
 ipcMain.handle('save-java-path', (event, javaPath) => {
   saveJavaPath(javaPath);
   return { success: true };
@@ -318,6 +376,16 @@ ipcMain.handle('save-install-path', (event, installPath) => {
 
 ipcMain.handle('load-install-path', () => {
   return loadInstallPath();
+});
+
+ipcMain.handle('save-discord-rpc', (event, enabled) => {
+  saveDiscordRPC(enabled);
+  toggleDiscordRPC(enabled);
+  return { success: true };
+});
+
+ipcMain.handle('load-discord-rpc', () => {
+  return loadDiscordRPC();
 });
 
 ipcMain.handle('select-install-path', async () => {
@@ -503,7 +571,7 @@ ipcMain.handle('load-settings', async () => {
   }
 });
 
-const { getModsPath, loadInstalledMods, downloadMod, uninstallMod, toggleMod } = require('./backend/launcher');
+const { getModsPath, loadInstalledMods, downloadMod, uninstallMod, toggleMod, getCurrentUuid, getAllUuidMappings, setUuidForUser, generateNewUuid, deleteUuidForUser, resetCurrentUserUuid } = require('./backend/launcher');
 const os = require('os');
 
 ipcMain.handle('get-local-app-data', async () => {
@@ -652,12 +720,73 @@ ipcMain.handle('get-log-directory', () => {
   return logger.getLogDirectory();
 });
 
+ipcMain.handle('get-current-uuid', async () => {
+  try {
+    return getCurrentUuid();
+  } catch (error) {
+    console.error('Error getting current UUID:', error);
+    return null;
+  }
+});
+
+ipcMain.handle('get-all-uuid-mappings', async () => {
+  try {
+    const mappings = getAllUuidMappings();
+    return Object.entries(mappings).map(([username, uuid]) => ({
+      username,
+      uuid,
+      isCurrent: username === require('./backend/launcher').loadUsername()
+    }));
+  } catch (error) {
+    console.error('Error getting UUID mappings:', error);
+    return [];
+  }
+});
+
+ipcMain.handle('set-uuid-for-user', async (event, username, uuid) => {
+  try {
+    await setUuidForUser(username, uuid);
+    return { success: true };
+  } catch (error) {
+    console.error('Error setting UUID for user:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('generate-new-uuid', async () => {
+  try {
+    return generateNewUuid();
+  } catch (error) {
+    console.error('Error generating new UUID:', error);
+    return null;
+  }
+});
+
+ipcMain.handle('delete-uuid-for-user', async (event, username) => {
+  try {
+    const result = deleteUuidForUser(username);
+    return { success: result };
+  } catch (error) {
+    console.error('Error deleting UUID for user:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('reset-current-user-uuid', async () => {
+  try {
+    const newUuid = resetCurrentUserUuid();
+    return { success: true, uuid: newUuid };
+  } catch (error) {
+    console.error('Error resetting current user UUID:', error);
+    return { success: false, error: error.message };
+  }
+});
+
 ipcMain.handle('get-recent-logs', async (event, maxLines = 100) => {
   try {
     const logDir = logger.getLogDirectory();
     if (!logDir) return null;
     
-    // Find the most recent log file
     const files = fs.readdirSync(logDir)
       .filter(file => file.startsWith('launcher-') && file.endsWith('.log'))
       .map(file => ({
@@ -679,3 +808,4 @@ ipcMain.handle('get-recent-logs', async (event, maxLines = 100) => {
     return null;
   }
 });
+

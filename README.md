@@ -1,18 +1,19 @@
-# 🎮 Hytale F2P Launcher | Multiplayer Support
+# 🎮 Hytale F2P Launcher | Multiplayer Support [Windows, MacOS, Linux]
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/Version-2.0.1-green?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-2.0.2-green?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-Educational-blue?style=for-the-badge)
 
-**A modern, cross-platform offline launcher for Hytale with automatic updates and multiplayer support (windows users & non-premium only)**
+**A modern, cross-platform offline launcher for Hytale with automatic updates and multiplayer support (all OS supported)**
 
 [![GitHub stars](https://img.shields.io/github/stars/amiayweb/Hytale-F2P?style=social)](https://github.com/amiayweb/Hytale-F2P/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/amiayweb/Hytale-F2P?style=social)](https://github.com/amiayweb/Hytale-F2P/network/members)
 
 ⭐ **If you find this project useful, please give it a star!** ⭐
-🛑 **Found a problem? Open an issue! I’m on Windows, so I can’t test on macOS or Linux.** 🛑
+
+🛑 **Found a problem? Join the Discord: https://discord.gg/gME8rUy3MB** 🛑
 
 </div>
 
@@ -36,7 +37,7 @@
 - 💾 **Data Preservation** - Intelligent UserData backup and restoration during updates
 - 🌐 **Cross-Platform** - Full support for Windows, Linux (X11/Wayland), and macOS
 - ☕ **Java Management** - Automatic Java runtime detection and installation
-- 🎮 **Multiplayer Support** - Automatic multiplayer client installation (Windows)
+- 🎮 **Multiplayer Support** - Automatic multiplayer client installation (Windows, macOS & Linux !)
 
 🛡️ **Advanced Features**
 - 📁 **Custom Installation** - Choose your own installation directory
@@ -63,7 +64,7 @@ See [BUILD.md](BUILD.md) for detailed build instructions or [**Releases**](https
 #### macOS  
 See [BUILD.md](BUILD.md) for detailed build instructions or [**Releases**](https://github.com/amiayweb/Hytale-F2P/releases) section.
 
-#### 🖥️ How to create server (Windows Only)?
+#### 🖥️ How to play online on F2P?
 See [SERVER.md](SERVER.md)
    
 
@@ -77,7 +78,15 @@ See [BUILD.md](BUILD.md) for comprehensive build instructions.
 
 ## 📋 Changelog
 
-### 🆕 v2.0.1 *(Latest)*
+### 🆕 v2.0.2 *(Latest)*
+- 🎮 **Discord RPC Integration** - Added Discord Rich Presence with toggle in settings (enabled by default)
+- 🌐 **Cross-Platform Multiplayer** - Added multiplayer patch support for Windows, Linux, and macOS
+- 🎨 **Chat Improvements** - Simplified chat color system
+- 🏆 **Badge System Expansion** - Added new FOUNDER UUID to the badge system
+- 🔧 **Progress Bar Fix** - Resolved issue where download progress bar stayed active after game launch
+- 🐛 **Bug Fixes**: General fixes
+
+### 🔄 v2.0.1
 - 📊 **Advanced Logging System** - Complete logging with timestamps, file rotation, and session tracking
 - 🔧 **Play Button Fix** - Resolved issue where play button could get stuck in "CHECKING..." state  
 - 💬 **Discord Integration** - Added closable Discord notification for community engagement
@@ -129,14 +138,16 @@ See [BUILD.md](BUILD.md) for comprehensive build instructions.
 
 ### 🏆 Project Creator
 - [**@amiayweb**](https://github.com/amiayweb) - *Lead Developer & Project Creator*
+- [**@Relyz1993**](https://github.com/Relyz1993) - *Server Helper & Second Developer & Project Creator*
 
 ### 🌟 Contributors  
+- [**@sanasol**](https://github.com/sanasol) - *Main Issues fixer | Multiplayer Patcher*
+- [**@Terromur**](https://github.com/Terromur) - *Main Issues fixer | Beta tester*
+- [**@fazrigading**](https://github.com/fazrigading) - *Main Issues fixer | Beta tester*
+- [**@ericiskoolbeans**](https://github.com/ericiskoolbeans) - *Beta Tester*
 - [**@chasem-dev**](https://github.com/chasem-dev) - *Issues fixer*
 - [**@crimera**](https://github.com/crimera) - *Issues fixer*  
-- [**@sanasol**](https://github.com/sanasol) - *Issues fixer*
-- [**@Terromur**](https://github.com/Terromur) - *Issues fixer*
 - [**@Citeli-py**](https://github.com/Citeli-py) - *Issues fixer*
-- [**@ericiskoolbeans**](https://github.com/ericiskoolbeans) - *Beta Tester*
 
 ---
 
@@ -156,10 +167,7 @@ See [BUILD.md](BUILD.md) for comprehensive build instructions.
 
 <div align="center">
 
-[![GitHub Issues](https://img.shields.io/badge/GitHub-Issues-red?style=for-the-badge&logo=github)](https://github.com/amiayweb/Hytale-F2P/issues)
-[![Discussions](https://img.shields.io/badge/GitHub-Discussions-blue?style=for-the-badge&logo=github)](https://github.com/amiayweb/Hytale-F2P/discussions)
-
-**Need help?** Open an [issue](https://github.com/amiayweb/Hytale-F2P/issues) or start a [discussion](https://github.com/amiayweb/Hytale-F2P/discussions)!
+**Need help?** Join us: https://discord.gg/gME8rUy3MB
 
 </div>
 

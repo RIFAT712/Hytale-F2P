@@ -205,9 +205,15 @@
                                     <i class="fas fa-comments mr-2"></i>
                                     PLAYERS CHAT
                                 </h2>
-                                <div class="chat-online-badge">
-                                    <i class="fas fa-circle"></i>
-                                    <span id="chatOnlineCount">0</span> online
+                                <div class="chat-header-actions">
+                                    <button id="chatColorBtn" class="chat-color-btn">
+                                        <i class="fas fa-palette"></i>
+                                        <span>Color</span>
+                                    </button>
+                                    <div class="chat-online-badge">
+                                        <i class="fas fa-circle"></i>
+                                        <span id="chatOnlineCount">0</span> online
+                                    </div>
                                 </div>
                             </div>
                             
@@ -293,6 +299,24 @@
 
                                 <div class="settings-section">
                                     <h3 class="settings-section-title">
+                                        <i class="fab fa-discord"></i>
+                                        Discord Integration
+                                    </h3>
+                                    
+                                    <div class="settings-option">
+                                        <label class="settings-checkbox">
+                                            <input type="checkbox" id="discordRPCCheck" checked />
+                                            <span class="checkmark"></span>
+                                            <div class="checkbox-content">
+                                                <div class="checkbox-title">Enable Discord Rich Presence</div>
+                                                <div class="checkbox-description">Show your launcher activity on Discord</div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="settings-section">
+                                    <h3 class="settings-section-title">
                                         <i class="fas fa-gamepad"></i>
                                         Game Options
                                     </h3>
@@ -321,6 +345,50 @@
                                                 <div class="btn-content">
                                                     <div class="btn-title">Open Game Location</div>
                                                     <div class="btn-description">Open the game installation folder</div>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="settings-section">
+                                    <h3 class="settings-section-title">
+                                        <i class="fas fa-fingerprint"></i>
+                                        Player UUID Management
+                                    </h3>
+                                    
+                                    <div class="settings-option">
+                                        <div class="settings-input-group">
+                                            <label class="settings-input-label">Current UUID</label>
+                                            <div class="uuid-display-container">
+                                                <input 
+                                                    type="text" 
+                                                    id="currentUuid" 
+                                                    class="settings-input uuid-input" 
+                                                    readonly
+                                                    placeholder="Loading UUID..."
+                                                />
+                                                <button id="copyUuidBtn" class="uuid-btn copy-btn" title="Copy UUID">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                                <button id="regenerateUuidBtn" class="uuid-btn regenerate-btn" title="Generate New UUID">
+                                                    <i class="fas fa-sync-alt"></i>
+                                                </button>
+                                            </div>
+                                            <p class="settings-hint">
+                                                <i class="fas fa-info-circle"></i>
+                                                Your unique player identifier for this username
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-option">
+                                        <div class="settings-button-group">
+                                            <button id="manageUuidsBtn" class="settings-action-btn">
+                                                <i class="fas fa-list"></i>
+                                                <div class="btn-content">
+                                                    <div class="btn-title">Manage All UUIDs</div>
+                                                    <div class="btn-description">View and manage all player UUIDs</div>
                                                 </div>
                                             </button>
                                         </div>
@@ -415,16 +483,84 @@
         </div>
     </div>
 
+    <!-- UUID Management Modal -->
+    <div id="uuidModal" class="uuid-modal" style="display: none;">
+        <div class="uuid-modal-content">
+            <div class="uuid-modal-header">
+                <h2 class="uuid-modal-title">
+                    <i class="fas fa-fingerprint mr-2"></i>
+                    UUID Management
+                </h2>
+                <button id="uuidModalClose" class="modal-close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="uuid-modal-body">
+                <div class="uuid-current-section">
+                    <h3 class="uuid-section-title">Current User UUID</h3>
+                    <div class="uuid-current-display">
+                        <input type="text" id="modalCurrentUuid" class="uuid-display-input" readonly />
+                        <button id="modalCopyUuidBtn" class="uuid-action-btn copy-btn" title="Copy UUID">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        <button id="modalRegenerateUuidBtn" class="uuid-action-btn regenerate-btn" title="Generate New UUID">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="uuid-list-section">
+                    <div class="uuid-list-header">
+                        <h3 class="uuid-section-title">All Player UUIDs</h3>
+                        <button id="generateNewUuidBtn" class="uuid-generate-btn">
+                            <i class="fas fa-plus"></i>
+                            Generate New UUID
+                        </button>
+                    </div>
+                    <div id="uuidList" class="uuid-list">
+                        <div class="uuid-loading">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            Loading UUIDs...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="uuid-custom-section">
+                    <h3 class="uuid-section-title">Set Custom UUID</h3>
+                    <div class="uuid-custom-form">
+                        <input 
+                            type="text" 
+                            id="customUuidInput" 
+                            class="uuid-input" 
+                            placeholder="Enter custom UUID (format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)"
+                            maxlength="36"
+                        />
+                        <button id="setCustomUuidBtn" class="uuid-set-btn">
+                            <i class="fas fa-check"></i>
+                            Set UUID
+                        </button>
+                    </div>
+                    <p class="uuid-custom-hint">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Warning: Setting a custom UUID will change your current player identity
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <footer class="fixed bottom-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-sm px-4 py-2">
         <div class="flex items-center justify-center text-xs text-gray-400">
-            <span>Made by <a href="https://github.com/amiayweb" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors">@amiayweb</a></span>
+            <span>Made by <a href="https://github.com/amiayweb" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors">@amiayweb</a> & <a href="https://github.com/Relyz1993" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors">@Relyz</a></span>
             <span class="mx-2">|</span>
             <span>Contributors: 
                 <a href="https://github.com/chasem-dev" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors">@chasem-dev</a>, 
                 <a href="https://github.com/crimera" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors">@crimera</a>, 
                 <a href="https://github.com/sanasol" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors">@sanasol</a>, 
                 <a href="https://github.com/Terromur" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors">@terromur</a>, 
-                <a href="https://github.com/ericiskoolbeans" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors">@ericiskoolbeans</a>
+                <a href="https://github.com/ericiskoolbeans" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors">@ericiskoolbeans</a>, 
+                <a href="https://github.com/fazrigading" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors">@fazrigading</a>
             </span>
         </div>
     </footer>
@@ -442,6 +578,50 @@
             <i class="fas fa-times"></i>
         </button>
     </div>
+
+    <!-- Modal pour sélectionner la couleur du chat -->
+    <div id="chatColorModal" class="chat-color-modal" style="display: none;">
+        <div class="chat-color-modal-content">
+            <div class="chat-color-modal-header">
+                <h3 class="chat-color-modal-title">
+                    <i class="fas fa-palette"></i>
+                    Customize Username Color
+                </h3>
+                <button class="modal-close-btn" onclick="closeChatColorModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="chat-color-modal-body">
+                <div id="solidColorSection" class="color-section">
+                    <h4>Choose a solid color:</h4>
+                    <div class="predefined-colors">
+                        <div class="color-option" data-color="#3498db" style="background: #3498db;"></div>
+                        <div class="color-option" data-color="#e74c3c" style="background: #e74c3c;"></div>
+                        <div class="color-option" data-color="#2ecc71" style="background: #2ecc71;"></div>
+                        <div class="color-option" data-color="#f39c12" style="background: #f39c12;"></div>
+                        <div class="color-option" data-color="#9b59b6" style="background: #9b59b6;"></div>
+                        <div class="color-option" data-color="#1abc9c" style="background: #1abc9c;"></div>
+                        <div class="color-option" data-color="#e91e63" style="background: #e91e63;"></div>
+                        <div class="color-option" data-color="#ff5722" style="background: #ff5722;"></div>
+                    </div>
+                    <div class="custom-color-input">
+                        <label for="customColor">Custom color:</label>
+                        <input type="color" id="customColor" value="#3498db">
+                    </div>
+                </div>
+
+                <div class="color-preview">
+                    <h4>Preview:</h4>
+                    <div id="colorPreview" class="preview-username">YourUsername</div>
+                </div>
+            </div>
+            <div class="chat-color-modal-footer">
+                <button class="btn-secondary" onclick="closeChatColorModal()">Cancel</button>
+                <button class="btn-primary" onclick="applyChatColor()">Apply Color</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="js/update.js"></script>
 </body>
 

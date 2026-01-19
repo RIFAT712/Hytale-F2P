@@ -3,7 +3,7 @@ const axios = require('axios');
 async function getLatestClientVersion() {
   try {
     console.log('Fetching latest client version from API...');
-    const response = await axios.get('http://3.10.208.30:3002/api/version_client', {
+    const response = await axios.get('https://files.hytalef2p.com/api/version_client', {
       timeout: 5000,
       headers: {
         'User-Agent': 'Hytale-F2P-Launcher'
@@ -28,7 +28,7 @@ async function getLatestClientVersion() {
 async function getInstalledClientVersion() {
   try {
     console.log('Fetching installed client version from API...');
-    const response = await axios.get('http://3.10.208.30:3002/api/clientCheck', {
+    const response = await axios.get('https://files.hytalef2p.com/api/clientCheck', {
       timeout: 5000,
       headers: {
         'User-Agent': 'Hytale-F2P-Launcher'
@@ -50,33 +50,7 @@ async function getInstalledClientVersion() {
   }
 }
 
-async function getMultiClientVersion() {
-  try {
-    console.log('Fetching Multiplayer version from API...');
-    const response = await axios.get('http://3.10.208.30:3002/api/multi', {
-      timeout: 5000,
-      headers: {
-        'User-Agent': 'Hytale-F2P-Launcher'
-      }
-    });
-
-    if (response.data && response.data.multi_version) {
-      const version = response.data.multi_version;
-      console.log(`Multiplayer version: ${version}`);
-      return version;
-    } else {
-      console.log('Warning: Invalid multi API response');
-      return null;
-    }
-  } catch (error) {
-    console.error('Error fetching Multiplayer version:', error.message);
-    console.log('Multiplayer not available');
-    return null;
-  }
-}
-
 module.exports = {
   getLatestClientVersion,
-  getInstalledClientVersion,
-  getMultiClientVersion
+  getInstalledClientVersion
 };

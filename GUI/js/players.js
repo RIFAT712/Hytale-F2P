@@ -1,5 +1,5 @@
 
-const API_URL = 'http://3.10.208.30/api';
+const API_URL = 'https://api.hytalef2p.com/api';
 let updateInterval = null;
 let currentUserId = null;
 

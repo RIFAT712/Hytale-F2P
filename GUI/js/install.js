@@ -33,19 +33,10 @@ export function setupInstallation() {
 
   if (window.electronAPI && window.electronAPI.onProgressUpdate) {
     window.electronAPI.onProgressUpdate((data) => {
+      if (!isDownloading) return;
       if (window.LauncherUI) {
-        window.LauncherUI.showProgress();
         window.LauncherUI.updateProgress(data);
       }
-    });
-  }
-
-  if (window.electronAPI && window.electronAPI.onProgressComplete) {
-    window.electronAPI.onProgressComplete(() => {
-      if (window.LauncherUI) {
-        window.LauncherUI.hideProgress();
-      }
-      resetInstallButton();
     });
   }
 }
@@ -75,6 +66,7 @@ export async function installGame() {
             window.LauncherUI.showLauncherOrInstall(true);
             const playerNameInput = document.getElementById('playerName');
             if (playerNameInput) playerNameInput.value = playerName;
+            resetInstallButton();
           }, 2000);
         }
       } else {
@@ -204,6 +196,12 @@ async function loadPlayerSettings() {
 }
 
 window.installGame = installGame;
+window.browseInstallPath = browseInstallPath;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  setupInstallation();
+  await checkGameStatusAndShowInterface();
+});
 window.browseInstallPath = browseInstallPath;
 
 document.addEventListener('DOMContentLoaded', async () => {
