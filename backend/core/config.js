@@ -151,14 +151,10 @@ function saveModsToConfig(mods) {
   try {
     const config = loadConfig();
 
-    // Config migration to profiles handles the structure, 
-    // but here we ensure that if we are saving mods, we save them to the ACTIVE profile
-    // OR we save to the global pool if that's the design.
-    // Based on the plan: Profile has "Enabled Mods". 
-    // This function seems to be used to save the list of *Installed* mods.
+  // Config migration handles structure, but mod saves must go to the ACTIVE profile.
+  // Global installedMods is kept mainly for reference/migration.
+  // The profile is the source of truth for enabled mods.
 
-    // We'll update the global config for "installedMods" mostly for reference/migration,
-    // but primarily we should be updating the active profile's mod list.
 
     if (config.activeProfileId && config.profiles && config.profiles[config.activeProfileId]) {
       config.profiles[config.activeProfileId].mods = mods;
