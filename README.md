@@ -25,17 +25,14 @@
 <div align="center">
   <h3>Hytale F2P Launcher</h3>
   <img src="https://i.imgur.com/9iDuzST.png" alt="Hytale F2P Launcher" width="1000">
-  <br />
   <details>
     <summary><b>View Mods Preview</b></summary>
     <img src="https://i.imgur.com/NaareIS.png" alt="Hytale F2P Mods" width="1000">
   </details>
-  <br />
   <details>
     <summary><b>View Latest News</b></summary>
     <img src="https://i.imgur.com/n1nEqRS.png" alt="Hytale F2P News" width="1000">
   </details>
-  <br />
   <details>
     <summary><b>View Social & Chat</b></summary>
     <img src="https://i.imgur.com/Y4hL3sx.png" alt="Hytale F2P Chat" width="1000">
@@ -87,7 +84,7 @@ Hytale is designed to be accessible while scaling for high-end performance. Belo
       <td colspan="3" align="center">
         Windows 10/11 (64-bit; X64/ARM64) | Linux (x64/ARM64) | macOS (Apple Silicon only)
         <br />
-        <small><i>⚠️ Note: macOS Intel (x86) is not yet supported</i></small>
+        <small><i>⚠️ Note: macOS Intel (x86) is not yet supported <a href="#fn1" id="ref1">1</a></sup></i></small>
       </td>
     </tr>
     <tr>
@@ -122,8 +119,10 @@ Hytale is designed to be accessible while scaling for high-end performance. Belo
     </tr>
   </tbody>
 </table>
-
 </div>
+<p id="fn1"><sup>1</sup> Hytale did not provide game files for macOS Intel, yet.</p>
+
+
 
 ### 🪟 Windows Prequisites
 * **Java JDK 25:** Download via [Adoptium](https://adoptium.net/temurin/releases/?version=25) or [Oracle](https://www.oracle.com/java/technologies/downloads/#jdk25-windows)
@@ -356,6 +355,7 @@ This launcher is created for **educational purposes only**.
 **⭐ Star this project if you found it helpful! ⭐**
 
 *Made with ❤️ by [@amiayweb](https://github.com/amiayweb) and the legendary contributors with amazing community*
+
 [![Star History Chart](https://api.star-history.com/svg?repos=amiayweb/Hytale-F2P&type=date&legend=top-left)](https://www.star-history.com/#amiayweb/Hytale-F2P&type=date&legend=top-left)
 </div>
 
