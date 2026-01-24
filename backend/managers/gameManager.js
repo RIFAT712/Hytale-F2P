@@ -325,6 +325,11 @@ async function installGame(playerName = 'Player', progressCallback, javaPathOver
   const logoResult = await downloadAndReplaceLogo(customGameDir, progressCallback);
   console.log('Logo@2x.png update result after installation:', logoResult);
 
+  // Write version file
+  const versionFilePath = path.join(customGameDir, '..', 'version.json');
+  fs.writeFileSync(versionFilePath, JSON.stringify({ version: latestVersion }, null, 2), 'utf8');
+  console.log(`Version file written to: ${versionFilePath}`);
+
   if (progressCallback) {
     progressCallback('Installation complete', 100, null, null, null);
   }

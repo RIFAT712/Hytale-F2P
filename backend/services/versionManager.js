@@ -1,4 +1,7 @@
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
+const { getResolvedAppDir } = require('../core/paths');
 
 async function getLatestClientVersion() {
   try {
@@ -27,25 +30,21 @@ async function getLatestClientVersion() {
 
 async function getInstalledClientVersion() {
   try {
-    console.log('Fetching installed client version from API...');
-    const response = await axios.get('https://files.hytalef2p.com/api/clientCheck', {
-      timeout: 5000,
-      headers: {
-        'User-Agent': 'Hytale-F2P-Launcher'
-      }
-    });
+    const appDir = getResolvedAppDir();
+    const versionFile = path.join(appDir, 'release', 'package', 'game', 'version.json');
 
-    if (response.data && response.data.client_version) {
-      const version = response.data.client_version;
-      console.log(`Installed client version: ${version}`);
-      return version;
-    } else {
-      console.log('Warning: Invalid clientCheck API response');
-      return null;
+    if (fs.existsSync(versionFile)) {
+      const data = fs.readFileSync(versionFile, 'utf8');
+      const json = JSON.parse(data);
+      if (json && json.version) {
+        console.log(`Installed client version from local file: ${json.version}`);
+        return json.version;
+      }
     }
+    console.log('Local version file not found or invalid, assuming no version installed.');
+    return null;
   } catch (error) {
-    console.error('Error fetching installed client version:', error.message);
-    console.log('Warning: clientCheck API unavailable');
+    console.error('Error reading installed client version:', error.message);
     return null;
   }
 }
