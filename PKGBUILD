@@ -1,5 +1,4 @@
 # Maintainer: Terromur <terromuroz@proton.me>
-# Maintainer: Fazri Gading <fazrigading@gmail.com>
 pkgname=Hytale-F2P-git
 _pkgname=Hytale-F2P
 pkgver=2.0.12.r150.gb62ffc1
@@ -22,7 +21,7 @@ pkgver() {
 
 build() {
    cd "$_pkgname"
-   npm install
+   npm ci
    npm run build:linux
 }
 
