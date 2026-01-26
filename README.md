@@ -308,20 +308,21 @@ See [BUILD.md](docs/BUILD.md) for comprehensive build instructions.
 ## 📋 Changelog
 
 ### 🆕 v2.1.1
-- 🛠️ **Fix EPERM** Issue
-- 🅰️ **Adds Better Arch Build**
-- 
+- 🛠️ **Fix Bug EPERM**: EPERM or Error Permission in creating/removing process in reinstalling is now fixed.
+- 🅰️ **Adds .pkg.tar.zst Build for Arch Users**: This Arch-package has been needed since the first release.  
+- ❎ **Removes .pacman Build for Arch**: Based on the established conventions within the Arch Linux community, the file extension .pacman should not be used for package files.
+- 🌎 **New Translation**: New Polish 🇵🇱 Translation added to the Launcher. 
 
 <details>
 <summary>Click here to see older Changelogs</summary>
 
-### 🆕 v2.1.0
+### 🔄 v2.1.0
 - 🚨 **Auto-Retry Downloads and Auto-Patch Files** — 
 - ⚡ **Hardware Acceleration** — 
 - 🔎 **Browse CurseForge Mods** — Browsing mods now easier with our dedicated CurseForge API Key.
 - 🌎 **Fixes and Release New Translation** — Fixed 🇪🇸 🇧🇷 and added more translation for current build. Turkish 🇹🇷 language now added.
 
-### 🆕 v2.0.2b *(Minor Update: Performance & Utilities)*  
+### 🔄 v2.0.2b *(Minor Update: Performance & Utilities)*  
 - 🌎 **Language Translation** — A big welcome for Spanish 🇪🇸 and Portuguese (Brazil) 🇧🇷 players! **Language setting can be found in the bottom part of Settings pane.**
 - 💻 **Laptop/Hybrid GPU Performance Issue Fix** — Added automatic GPU detection system and options to choose which GPU will be used for the game, *specifically for Linux users*.
 - 👨‍💻 **In-App Logging** — Reporting bugs and issues to `Github Issues` tab or `Open A Ticket` channel in our Discord Server has been made easier for players, no more finding logs file manually.
