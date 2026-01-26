@@ -3,17 +3,61 @@ name: Build and Release
 on:
   push:
     branches:
-      - release
+      - main
     tags:
       - 'v*'
   workflow_dispatch:
 
 jobs:
+  build-arch:
+    runs-on: ubuntu-latest
+
+    container:
+      image: archlinux:latest
+
+    steps:
+      - name: Install base packages
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm \
+            base-devel \
+            git \
+            nodejs \
+            npm \
+            rpm-tools \
+            libxcrypt-compat
+
+      - name: Create build user
+        run: |
+          useradd -m builder
+          echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fix permissions
+        run: chown -R builder:builder .
+
+      - name: Build Arch Package
+        run: |
+          sudo -u builder bash << 'EOF'
+          set -e
+          makepkg -s --noconfirm
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arch-package
+          path: |
+            *.pkg.tar.zst
+            *.src.tar.zst
+            .SRCINFO
+
   build-linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # FIX Install bsdtar for Pacman builds
       - name: Install build dependencies
         run: |
           sudo apt-get update
@@ -24,14 +68,6 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - run: npm ci
-
-      - name: Create .env file
-        env:
-          CF_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
-          DISCORD_ID: ${{ secrets.DISCORD_CLIENT_ID }}
-        run: |
-          echo "CURSEFORGE_API_KEY=$CF_KEY" > .env
-          echo "DISCORD_CLIENT_ID=$DISCORD_ID" >> .env
 
       - name: Build Linux Packages
         run: |
@@ -57,14 +93,6 @@ jobs:
           cache: 'npm'
       - run: npm ci
       
-      - name: Create .env file
-        env:
-          CF_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
-          DISCORD_ID: ${{ secrets.DISCORD_CLIENT_ID }}
-        run: |
-          echo "CURSEFORGE_API_KEY=$CF_KEY" > .env
-          echo "DISCORD_CLIENT_ID=$DISCORD_ID" >> .env
-
       - name: Build Windows Packages
         run: npx electron-builder --win --publish never
       - uses: actions/upload-artifact@v4
@@ -85,15 +113,7 @@ jobs:
           cache: 'npm'
       - run: npm ci
 
-      - name: Create .env file
-        env:
-          CF_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
-          DISCORD_ID: ${{ secrets.DISCORD_CLIENT_ID }}
-        run: |
-          echo "CURSEFORGE_API_KEY=$CF_KEY" > .env
-          echo "DISCORD_CLIENT_ID=$DISCORD_ID" >> .env
-
-      - name: Build Windows Packages
+      - name: Build macOS Packages
         run: npx electron-builder --mac --publish never
       - uses: actions/upload-artifact@v4
         with:
@@ -108,7 +128,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       startsWith(github.ref, 'refs/tags/v') || 
-      github.ref == 'refs/heads/release' || 
+      github.ref == 'refs/heads/main' || 
       github.event_name == 'workflow_dispatch'
 
     permissions:
@@ -137,12 +157,14 @@ jobs:
           # If it's a tag, use the tag. 
           tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}.r{1}', steps.pkg_version.outputs.VERSION, github.run_number) }}
           # If it's the 'release' branch, use 'v2.0.2-beta.r42'
-          name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}-beta.r{1}', steps.pkg_version.outputs.VERSION, github.run_number) }}
+          # name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}-beta.r{1}', steps.pkg_version.outputs.VERSION, github.run_number) }}
           files: |
+            artifacts/arch-package/*.pkg.tar.zst
+            artifacts/arch-package/*.src.tar.zst
             artifacts/linux-builds/**/*
             artifacts/windows-builds/**/*
             artifacts/macos-builds/**/*
           generate_release_notes: true
           draft: true
-          # DYNAMIC FLAGS: Mark as pre-release ONLY IF it's NOT a tag (meaning it's a branch push)
-          prerelease: ${{ github.ref_type != 'tag' }}
+          prerelease: false
+          
