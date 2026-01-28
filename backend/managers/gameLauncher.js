@@ -5,13 +5,14 @@ const { exec } = require('child_process');
 const { promisify } = require('util');
 const { spawn } = require('child_process');
 const { v4: uuidv4 } = require('uuid');
-const { getResolvedAppDir, findClientPath } = require('../core/paths');
+const { getResolvedAppDir, findClientPath, getProfileUserDataPath } = require('../core/paths');
 const { setupWaylandEnvironment, setupGpuEnvironment } = require('../utils/platformUtils');
 const { saveUsername, saveInstallPath, loadJavaPath, getUuidForUser, getAuthServerUrl, getAuthDomain, loadVersionBranch, loadVersionClient, saveVersionClient } = require('../core/config');
 const { resolveJavaPath, getJavaExec, getBundledJavaPath, detectSystemJava, JAVA_EXECUTABLE } = require('./javaManager');
 const { getLatestClientVersion } = require('../services/versionManager');
 const { updateGameFiles } = require('./gameManager');
 const { syncModsForCurrentProfile } = require('./modManager');
+const profileManager = require('./profileManager');
 
 // Client patcher for custom auth server (sanasol.ws)
 let clientPatcher = null;
@@ -106,7 +107,76 @@ async function launchGame(playerName = 'Player', progressCallback, javaPathOverr
   const customAppDir = getResolvedAppDir(installPathOverride);
   const customGameDir = path.join(customAppDir, branch, 'package', 'game', 'latest');
   const customJreDir = path.join(customAppDir, branch, 'package', 'jre', 'latest');
-  const userDataDir = path.join(customGameDir, 'Client', 'UserData');
+  
+  // Initialize ProfileManager if needed
+  if (!profileManager.initialized) {
+    profileManager.init();
+  }
+  
+  const activeProfile = profileManager.getActiveProfile();
+  let userDataDir;
+
+  if (activeProfile) {
+    userDataDir = getProfileUserDataPath(activeProfile.id);
+    console.log(`[Launcher] Using profile: ${activeProfile.name} (${activeProfile.id})`);
+    console.log(`[Launcher] UserData path: ${userDataDir}`);
+  } else {
+    // Fallback if no profile system (shouldn't happen if init works)
+    console.warn('[Launcher] No active profile found, using default legacy path');
+    userDataDir = path.join(customGameDir, 'Client', 'UserData');
+  }
+
+  // Ensure UserData directory exists
+  if (!fs.existsSync(userDataDir)) {
+    fs.mkdirSync(userDataDir, { recursive: true });
+  }
+
+  // MIGRATION: Check if we have legacy data to migrate
+  const legacyUserDataPath = path.join(customGameDir, 'Client', 'UserData');
+  const persistentProfilesDir = path.dirname(userDataDir); // .../profiles/
+  
+  if (fs.existsSync(legacyUserDataPath)) {
+    // 1. Migrate Profiles folder if it exists inside legacy UserData
+    const legacyProfilesPath = path.join(legacyUserDataPath, 'Profiles');
+    if (fs.existsSync(legacyProfilesPath) && fs.lstatSync(legacyProfilesPath).isDirectory()) {
+        console.log('[Launcher] Detected legacy Profiles folder. Migrating to new persistent location...');
+        try {
+            const profiles = fs.readdirSync(legacyProfilesPath);
+            for (const profileId of profiles) {
+                const src = path.join(legacyProfilesPath, profileId);
+                const dest = path.join(persistentProfilesDir, profileId);
+                if (fs.lstatSync(src).isDirectory() && !fs.existsSync(dest)) {
+                    await fs.promises.cp(src, dest, { recursive: true, force: true });
+                }
+            }
+            console.log('[Launcher] Profiles migration successful.');
+        } catch (profErr) {
+            console.error('[Launcher] Profiles migration failed:', profErr);
+        }
+    }
+
+    // 2. Migrate UserData content to the active profile's UserData
+    if (path.resolve(userDataDir) !== path.resolve(legacyUserDataPath)) {
+        const legacyFiles = fs.readdirSync(legacyUserDataPath).filter(f => f !== 'Profiles' && f !== 'Mods');
+        if (legacyFiles.length > 0) {
+            const newFiles = fs.existsSync(userDataDir) ? fs.readdirSync(userDataDir) : [];
+            if (newFiles.length === 0) {
+                console.log('[Launcher] Detected legacy UserData. Migrating to active profile...');
+                try {
+                    // Copy everything except Profiles and Mods (handled separately or by modManager)
+                    for (const file of legacyFiles) {
+                        const src = path.join(legacyUserDataPath, file);
+                        const dest = path.join(userDataDir, file);
+                        await fs.promises.cp(src, dest, { recursive: true, force: true });
+                    }
+                    console.log('[Launcher] UserData migration successful.');
+                } catch (migErr) {
+                    console.error('[Launcher] UserData migration failed:', migErr);
+                }
+            }
+        }
+    }
+  }
 
   const gameLatest = customGameDir;
   let clientPath = findClientPath(gameLatest);

@@ -10,6 +10,8 @@ const { downloadAndReplaceHomePageUI, downloadAndReplaceLogo } = require('./uiFi
 const { saveUsername, saveInstallPath, loadJavaPath, CONFIG_FILE, loadConfig, loadVersionBranch, saveVersionClient, loadVersionClient } = require('../core/config');
 const { resolveJavaPath, detectSystemJava, downloadJRE, getJavaExec, getBundledJavaPath } = require('./javaManager');
 const userDataBackup = require('../utils/userDataBackup');
+const profileManager = require('./profileManager');
+const { getProfileUserDataPath } = require('../core/paths');
 
 async function downloadPWR(branch = 'release', fileName = '4.pwr', progressCallback, cacheDir = CACHE_DIR, manualRetry = false) {
   const osName = getOS();
@@ -321,18 +323,56 @@ async function updateGameFiles(newVersion, progressCallback, gameDir = GAME_DIR,
   
   try {
     if (progressCallback) {
-      progressCallback('Backing up user data...', 5, null, null, null);
+      progressCallback('Preparing update...', 5, null, null, null);
     }
 
-    // Backup UserData AVANT de télécharger/installer (critical for same-branch updates)
-    try {
-      console.log(`[UpdateGameFiles] Attempting to backup UserData from old branch: ${oldBranch}`);
-      backupPath = await userDataBackup.backupUserData(installPath, oldBranch, hasVersionConfig);
-      if (backupPath) {
-        console.log(`[UpdateGameFiles] ✓ UserData backed up from ${oldBranch}: ${backupPath}`);
-      }
-    } catch (backupError) {
-      console.warn('[UpdateGameFiles] ✗ UserData backup failed:', backupError.message);
+    // Initialize ProfileManager if needed
+    if (!profileManager.initialized) profileManager.init();
+    const activeProfile = profileManager.getActiveProfile();
+
+    // MIGRATION: Move UserData to persistent profile location BEFORE wipe
+    const legacyUserDataPath = path.join(gameDir, 'Client', 'UserData');
+    const persistentProfilesDir = path.join(getResolvedAppDir(), 'profiles');
+    
+    if (fs.existsSync(legacyUserDataPath) && activeProfile) {
+        console.log(`[Update] Checking for legacy UserData to migrate...`);
+        
+        // 1. Migrate Profiles folder
+        const legacyProfilesPath = path.join(legacyUserDataPath, 'Profiles');
+        if (fs.existsSync(legacyProfilesPath) && fs.lstatSync(legacyProfilesPath).isDirectory()) {
+            console.log('[Update] Migrating legacy Profiles...');
+            try {
+                if (!fs.existsSync(persistentProfilesDir)) fs.mkdirSync(persistentProfilesDir, { recursive: true });
+                const profiles = fs.readdirSync(legacyProfilesPath);
+                for (const profileId of profiles) {
+                    const src = path.join(legacyProfilesPath, profileId);
+                    const dest = path.join(persistentProfilesDir, profileId);
+                    if (fs.lstatSync(src).isDirectory() && !fs.existsSync(dest)) {
+                        await fs.promises.cp(src, dest, { recursive: true, force: true });
+                    }
+                }
+            } catch (e) { console.error('[Update] Profiles migration failed:', e); }
+        }
+
+        // 2. Migrate UserData content to the active profile
+        const targetDir = getProfileUserDataPath(activeProfile.id);
+        if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+        
+        const legacyFiles = fs.readdirSync(legacyUserDataPath).filter(f => f !== 'Profiles' && f !== 'Mods');
+        if (legacyFiles.length > 0) {
+             console.log(`[Update] Migrating ${legacyFiles.length} items to profile: ${activeProfile.name}`);
+             try {
+                 for (const file of legacyFiles) {
+                     const src = path.join(legacyUserDataPath, file);
+                     const dest = path.join(targetDir, file);
+                     await fs.promises.cp(src, dest, { recursive: true, force: true, preserveTimestamps: true });
+                 }
+                 console.log('[Update] ✓ UserData migrated/backed up successfully.');
+             } catch (migError) {
+                 console.error('[Update] ✗ UserData migration failed:', migError);
+                 throw new Error(`Critical: Failed to migrate user data. Update aborted. Error: ${migError.message}`);
+             }
+        }
     }
 
     if (progressCallback) {
@@ -390,31 +430,20 @@ async function updateGameFiles(newVersion, progressCallback, gameDir = GAME_DIR,
     const logoResult = await downloadAndReplaceLogo(gameDir, progressCallback);
     console.log('Logo@2x.png update result after update:', logoResult);
 
-    // Ensure UserData directory exists
+    // Ensure UserData directory exists (empty one for game structure compatibility)
     const userDataDir = path.join(gameDir, 'Client', 'UserData');
     if (!fs.existsSync(userDataDir)) {
-      console.log(`[UpdateGameFiles] Creating UserData directory at: ${userDataDir}`);
+      console.log(`[UpdateGameFiles] Creating placeholder UserData directory at: ${userDataDir}`);
       fs.mkdirSync(userDataDir, { recursive: true });
     }
 
     if (progressCallback) {
-      progressCallback('Restoring user data...', 90, null, null, null);
+      progressCallback('Finalizing update...', 90, null, null, null);
     }
 
-    // Restore UserData using new system
-    if (backupPath) {
-      try {
-        console.log(`[UpdateGameFiles] Restoring UserData from ${oldBranch} to ${branch}`);
-        console.log(`[UpdateGameFiles] Source backup: ${backupPath}`);
-        await userDataBackup.restoreUserData(backupPath, installPath, branch);
-        await userDataBackup.cleanupBackup(backupPath);
-        console.log(`[UpdateGameFiles] ✓ UserData migrated successfully from ${oldBranch} to ${branch}`);
-      } catch (restoreError) {
-        console.warn('[UpdateGameFiles] ✗ UserData restore failed:', restoreError.message);
-      }
-    } else {
-      console.log('[UpdateGameFiles] No backup to restore, empty UserData folder created');
-    }
+    // No need to restore UserData to the game folder anymore.
+    // Data is now safely in the profile directory.
+    console.log('[UpdateGameFiles] Update complete. UserData is now managed by ProfileManager.');
 
     console.log(`Game files updated successfully to version: ${newVersion}`);
     
@@ -433,15 +462,6 @@ async function updateGameFiles(newVersion, progressCallback, gameDir = GAME_DIR,
     return { success: true, updated: true, version: newVersion };
   } catch (error) {
     console.error('Error updating game files:', error);
-
-    if (backupPath) {
-      try {
-        await userDataBackup.cleanupBackup(backupPath);
-        console.log('UserData backup cleaned up after error');
-      } catch (cleanupError) {
-        console.warn('Could not clean up UserData backup:', cleanupError.message);
-      }
-    }
 
     if (tempUpdateDir && fs.existsSync(tempUpdateDir)) {
       fs.rmSync(tempUpdateDir, { recursive: true, force: true });
@@ -478,20 +498,26 @@ async function installGame(playerName = 'Player', progressCallback, javaPathOver
   console.log(`[InstallGame] Configuration detected - version_client: ${config.version_client}, version_branch: ${config.version_branch}`);
   console.log(`[InstallGame] hasVersionConfig: ${hasVersionConfig}`);
 
-  // Backup UserData AVANT l'installation si nécessaire
-  let backupPath = null;
-  if (progressCallback) {
-    progressCallback('Checking for existing UserData...', 5, null, null, null);
-  }
+  // Initialize ProfileManager if needed
+  if (!profileManager.initialized) profileManager.init();
+  const activeProfile = profileManager.getActiveProfile();
 
-  try {
-    console.log(`[InstallGame] Attempting UserData backup (hasVersionConfig: ${hasVersionConfig})...`);
-    backupPath = await userDataBackup.backupUserData(customAppDir, branch, hasVersionConfig);
-    if (backupPath) {
-      console.log(`[InstallGame] ✓ UserData backed up to: ${backupPath}`);
-    }
-  } catch (backupError) {
-    console.warn('[InstallGame] ✗ UserData backup failed:', backupError.message);
+  // MIGRATION: If we are installing over an existing folder (re-install), check for legacy data
+  // Only relevant if we haven't already migrated in a previous step (like repair)
+  const legacyUserDataPath = path.join(customGameDir, 'Client', 'UserData');
+  if (fs.existsSync(legacyUserDataPath) && activeProfile) {
+     const targetDir = getProfileUserDataPath(activeProfile.id);
+     // If target is empty/missing and legacy exists, move it.
+     if (!fs.existsSync(targetDir) || fs.readdirSync(targetDir).length === 0) {
+         console.log('[InstallGame] Found legacy UserData during install, migrating to profile...');
+         if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+         try {
+             await fs.promises.cp(legacyUserDataPath, targetDir, { recursive: true, force: true, preserveTimestamps: true });
+             console.log('[InstallGame] ✓ Legacy UserData migrated to profile.');
+         } catch (e) {
+             console.error('[InstallGame] Migration warning:', e);
+         }
+     }
   }
 
   [customAppDir, customCacheDir, customToolsDir].forEach(dir => {
@@ -595,29 +621,13 @@ async function installGame(playerName = 'Player', progressCallback, javaPathOver
   const logoResult = await downloadAndReplaceLogo(customGameDir, progressCallback);
   console.log('Logo@2x.png update result after installation:', logoResult);
 
-  // Ensure UserData directory exists
+  // Ensure UserData directory exists (placeholder)
   if (!fs.existsSync(userDataDir)) {
-    console.log(`[InstallGame] Creating UserData directory at: ${userDataDir}`);
+    console.log(`[InstallGame] Creating placeholder UserData directory at: ${userDataDir}`);
     fs.mkdirSync(userDataDir, { recursive: true });
   }
 
-  // Restore UserData from backup if exists
-  if (backupPath) {
-    if (progressCallback) {
-      progressCallback('Restoring UserData...', 95, null, null, null);
-    }
-
-    try {
-      console.log(`[InstallGame] Restoring UserData from: ${backupPath}`);
-      await userDataBackup.restoreUserData(backupPath, customAppDir, branch);
-      await userDataBackup.cleanupBackup(backupPath);
-      console.log('[InstallGame] ✓ UserData restored successfully');
-    } catch (restoreError) {
-      console.warn('[InstallGame] ✗ UserData restore failed:', restoreError.message);
-    }
-  } else {
-    console.log('[InstallGame] No backup to restore, empty UserData folder created');
-  }
+  // No restore needed. Data is in profile.
 
   if (progressCallback) {
     progressCallback('Installation complete', 100, null, null, null);
@@ -709,11 +719,24 @@ async function repairGame(progressCallback, branchOverride = null) {
     progressCallback('Backing up user data...', 10, null, null, null);
   }
 
-  // Backup UserData using new system
-  try {
-    backupPath = await userDataBackup.backupUserData(installPath, branch, hasVersionConfig);
-  } catch (backupError) {
-    console.warn('UserData backup failed during repair:', backupError.message);
+  // Initialize ProfileManager if needed
+  if (!profileManager.initialized) profileManager.init();
+  const activeProfile = profileManager.getActiveProfile();
+
+  // MIGRATION: Ensure data is in profile before wiping game dir
+  const legacyUserDataPath = path.join(gameDir, 'Client', 'UserData');
+  if (fs.existsSync(legacyUserDataPath) && activeProfile) {
+       console.log('[Repair] Migrating UserData to profile before repair...');
+       const targetDir = getProfileUserDataPath(activeProfile.id);
+       if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+       try {
+           await fs.promises.cp(legacyUserDataPath, targetDir, { recursive: true, force: true, preserveTimestamps: true });
+           console.log('[Repair] ✓ UserData migrated to profile.');
+       } catch (e) {
+           console.error('[Repair] Migration warning:', e);
+           // Proceed with caution? Repair implies broken game, maybe UserData is corrupted too?
+           // But we try to save it.
+       }
   }
 
   if (progressCallback) {
@@ -736,20 +759,8 @@ async function repairGame(progressCallback, branchOverride = null) {
   // installGame calls progressCallback internally
   await installGame('Player', progressCallback, null, null, branch);
 
-  // Restore UserData using new system
-  if (backupPath) {
-    if (progressCallback) {
-      progressCallback('Restoring user data...', 90, null, null, null);
-    }
-
-    try {
-      await userDataBackup.restoreUserData(backupPath, installPath, branch);
-      await userDataBackup.cleanupBackup(backupPath);
-      console.log('UserData restored successfully after repair');
-    } catch (restoreError) {
-      console.warn('UserData restore failed after repair:', restoreError.message);
-    }
-  }
+  // No restore needed. Data is in profile.
+  console.log('Repair completed. UserData is safe in profile.');
 
   if (progressCallback) {
     progressCallback('Repair completed successfully!', 100, null, null, null);

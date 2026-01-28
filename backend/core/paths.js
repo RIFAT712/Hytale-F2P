@@ -218,21 +218,7 @@ async function getModsPath(customInstallPath = null) {
 
 function getProfilesDir(customInstallPath = null) {
   try {
-    // get UserData path
-    let installPath = customInstallPath;
-    if (!installPath) {
-        const configFile = path.join(DEFAULT_APP_DIR, 'config.json');
-        if (fs.existsSync(configFile)) {
-            const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
-            installPath = config.installPath || '';
-        }
-    }
-    if (!installPath) installPath = getAppDir();
-    
-    const branch = loadVersionBranch();
-    const gameLatest = path.join(installPath, branch, 'package', 'game', 'latest');
-    const userDataPath = findUserDataPath(gameLatest);
-    const profilesDir = path.join(userDataPath, 'Profiles');
+    const profilesDir = path.join(getResolvedAppDir(customInstallPath), 'profiles');
     
     if (!fs.existsSync(profilesDir)) {
         fs.mkdirSync(profilesDir, { recursive: true });
@@ -243,6 +229,10 @@ function getProfilesDir(customInstallPath = null) {
       console.error('Error getting profiles dir:', err);
       return null;
   }
+}
+
+function getProfileUserDataPath(profileId) {
+  return path.join(getResolvedAppDir(), 'profiles', profileId, 'UserData');
 }
 
 module.exports = {
@@ -262,5 +252,6 @@ module.exports = {
   findUserDataPath,
   findUserDataRecursive,
   getModsPath,
-  getProfilesDir
+  getProfilesDir,
+  getProfileUserDataPath
 };
