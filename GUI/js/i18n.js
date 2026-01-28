@@ -6,7 +6,8 @@ const i18n = (() => {
     { code: 'en', name: 'English' },
     { code: 'es-ES', name: 'Español (España)' },
     { code: 'pt-BR', name: 'Portuguese (Brazil)' },
-    { code: 'tr-TR', name: 'Turkish (Turkey)' }
+    { code: 'tr-TR', name: 'Turkish (Turkey)' },
+    { code: 'pl-PL', name: 'Polish (Poland)' }
   ];
 
   // Load single language file
